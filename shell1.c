@@ -238,46 +238,48 @@ while (1)
     }
 
     /* Does command contain pipe */
-    if (piping) {
+    if (piping) { // piping flag is set
         i = 0;
         while (token!= NULL)
         {
             token = strtok (NULL, " ");
-            argv2[i] = token;
-            i++;
+            argv2[i] = token; // Store the token
+            i++; // Move to the next index in the argv2 array
         }
         argv2[i] = NULL;
     }
 
     /* Does command line end with & */ 
     if (! strcmp(argv1[argc1 - 1], "&")) {
-        amper = 1;
-        argv1[argc1 - 1] = NULL;
+        amper = 1; // Set the amper flag to 1 to indicate background execution
+        argv1[argc1 - 1] = NULL; // Remove "&" from the argument list
         }
     else 
-        amper = 0;     
+        amper = 0; // Set the amper flag to 0 if "&" is not found 
 
     /* chanching the prompt */ 
     if(argc1 > 2 && ! strcmp(argv1[argc1 - 2], "=") && ! strcmp(argv1[argc1 - 3], "prompt")) {
-        strcpy(prompt, argv1[argc1 - 1]);
+        strcpy(prompt, argv1[argc1 - 1]); // Copy the new prompt value into the prompt variable
         continue;
     }
 
     /* read command */ 
     if(! strcmp(argv1[0], "read")) {
         strcpy(variables[count_var%20], "$");
-        strcat(variables[count_var%20],argv1[1]);
+        strcat(variables[count_var%20],argv1[1]); // Append the variable name
         fgets(var, 1024, stdin); 
+
         var[strlen(var) - 1] = '\0';
-        strcpy(variables_val[count_var%20], var);
+
+        strcpy(variables_val[count_var%20], var); // Copy the input value into the corresponding value slot
         count_var++;
         continue;
     }
 
     /* add variables */ 
     if(argc1 > 1 && argv1[0][0] == '$' && ! strcmp(argv1[1], "=")) {
-        strcpy(variables[count_var%20], argv1[0]);
-        strcpy(variables_val[count_var%20], argv1[2]);
+        strcpy(variables[count_var%20], argv1[0]); // Copy the variable name 
+        strcpy(variables_val[count_var%20], argv1[2]); // Copy the variable value
         count_var++;
         continue;
     }
@@ -290,12 +292,14 @@ while (1)
         //print value of variable
         } else if (argv1[1][0] == '$' && strcmp(argv1[1], "$")) {
             for(int i = 0; i < count_var && i < 20; i++) {
+                // Loop through the stored variables to find a match
                 if(!strcmp(variables[i], argv1[1])) {
                     printf("%s\n", variables_val[i]);
                 }
             }
         } else {
-            //echo 
+            //echo
+            // If none of the above, just echo the arguments back 
             for (int j = 1; j < argc1; j++) {
                 printf("%s ", argv1[j]);
             }
@@ -306,32 +310,34 @@ while (1)
 
     /* cd command */     
     if(! strcmp(argv1[0], "cd")) {
-        chdir(argv1[1]);
+        chdir(argv1[1]); // Change the current working directory to the directory specified in argv1[1]
         continue;
     }
     
     /* chanching the stdout */ 
     if(argc1 > 1 && ! strcmp(argv1[argc1 - 2], ">")) {
-        redirect = 1;
+        redirect = 1; // Set flag for stdout redirection
         redirectAppend = 0;
         redirectError = 0;
         argv1[argc1 - 2] = NULL;
         outfile = argv1[argc1 - 1];
+    
     /* chanching the stderror */ 
-    } else if(argc1 > 1 && ! strcmp(argv1[argc1 - 2], "2>")) {
-        redirectError = 1;
+    } else if(argc1 > 1 && ! strcmp(argv1[argc1 - 2], "2>")) { // Check if the command includes "2>" for stderr redirection
+        redirectError = 1; // Set flag for stderr redirection
         redirect = 0;
         redirectAppend = 0;
         argv1[argc1 - 2] = NULL;
         outfile = argv1[argc1 - 1];
     /* do append for a file */ 
-    } else if(argc1 > 1 && ! strcmp(argv1[argc1 - 2], ">>")) {
-        redirectAppend = 1;
+    } else if(argc1 > 1 && ! strcmp(argv1[argc1 - 2], ">>")) { // Check if the command includes ">>" for appending to a file
+        redirectAppend = 1; // Set flag for append redirection
         redirect = 0;
         redirectError = 0;
         argv1[argc1 - 2] = NULL;
         outfile = argv1[argc1 - 1];
-    } else {
+    } else { // If no redirection operator is found
+        // Reset flags
         redirectAppend = 0;
         redirectError = 0;
         redirect = 0;  
@@ -341,9 +347,9 @@ while (1)
     if (fork() == 0) { 
         /* redirection of IO ? */
         if (redirect || redirectAppend) {
-            if(redirect) {
+            if(redirect) { // If simple redirection (>)
                 fd = creat(outfile, 0660); 
-            } else {
+            } else { // If append redirection (>>)
                 fd = open(outfile, O_WRONLY | O_CREAT | O_APPEND, 0660);
             }
             close (STDOUT_FILENO) ; 
@@ -351,7 +357,7 @@ while (1)
             close(fd); 
             /* stdout is now redirected */
         }
-        if (redirectError) {
+        if (redirectError) { // Check if there is redirection for stderr (2>)
             fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0660);
             close (STDERR_FILENO) ; 
             dup(fd); 
@@ -368,7 +374,7 @@ while (1)
                 close(fildes[0]); 
                 /* stdout now goes to pipe */ 
                 /* child process does command */ 
-                execvp(argv1[0], argv1);
+                execvp(argv1[0], argv1); // Execute the first command
             } 
             /* 2nd command component of command line */ 
             close(STDIN_FILENO);
@@ -376,7 +382,7 @@ while (1)
             close(fildes[0]); 
             close(fildes[1]); 
             /* standard input now comes from pipe */ 
-            execvp(argv2[0], argv2);
+            execvp(argv2[0], argv2); // Execute the second command
         } 
         else {
             execvp(argv1[0], argv1);
@@ -387,4 +393,5 @@ while (1)
     if (amper == 0)
         retid = wait(&status);
 }
+
 }
