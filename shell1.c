@@ -196,12 +196,13 @@ while (1)
                 if (input != STDIN_FILENO) {
                     close(input); 
                 }
-                input = pipes[0]; 
-                wait(NULL);
+                input = pipes[0]; // Update input for the next pipe command
+                wait(NULL); // Wait for child process to finish
                 free(argv);
             }
         }
         for (int j = 0; j < pipe_count; j++) {
+             // Free memory allocated for pipe commands
             free(pipe_command[j]);
         }
         free(pipe_command);
@@ -218,13 +219,14 @@ while (1)
         argv1[i] = token;
         token = strtok (NULL, " ");
         i++;
+
         if (token && ! strcmp(token, "|")) {
-            piping = 1;
+            piping = 1; // Set the piping flag to indicate that the command contains a pipe
             break;
         }
     }
     argv1[i] = NULL;
-    argc1 = i;
+    argc1 = i; // Store the number of arguments
 
     /* Is command empty */
     if(argv1[0] == NULL)
