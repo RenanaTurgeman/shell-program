@@ -109,19 +109,21 @@ while (1)
 
         // Continue reading subsequent lines until 'fi' is encountered
         while (see_fi) {
-            memset(next_if, 0, sizeof(next_if)); 
-            fgets(next_if, 1024, stdin);
-            strcat(command, next_if);
+            memset(next_if, 0, sizeof(next_if)); // Clear the buffer
+            fgets(next_if, 1024, stdin); // Read the next line of the command from stdin
+            strcat(command, next_if); // Concatenate the next line to the current command
             command[strlen(command) - 1] = '\n';
+
+            // Check if the current line is 'fi' indicating the end of the if block
             if (!strcmp(next_if, "fi\n")) {
-                see_fi = 0;
+                see_fi = 0; // change the flag
             }
         }
         if (fork()==0) {
             char* argss[] = {"bash", "-c", command, NULL};
             execvp(argss[0], argss);
         }
-        wait(&status);
+        wait(&status); // Wait for the child process to finish
         continue;
     }
     
@@ -131,10 +133,13 @@ while (1)
         char **pipe_command = (char**) malloc(sizeof(char*) * 10);
         int size = 10;
         token = strtok(command, "|");
+
+        // Tokenize the command into pipe commands
         while (token != NULL) {
             pipe_command[pipe_count] = (char*) malloc(sizeof(char) * (strlen(token) + 1));
-            strcpy(pipe_command[pipe_count], token);
+            strcpy(pipe_command[pipe_count], token); // Copy the tokenized pipe command
             pipe_count++;
+
             if (pipe_count >= size-1) { // resize array if necessary
                 pipe_command = (char**) realloc(pipe_command, sizeof(char*) * (size + 10));
                 size+=10;
@@ -143,19 +148,24 @@ while (1)
         }
         pipe_command[pipe_count] = NULL;
         
+        // Initialize pipes
         int pipes[2];
         int input = STDIN_FILENO; 
         
+        // Iterate through each pipe command
         for (int j = 0; j < pipe_count; j++) {
             int argv_count = 0;
             char **argv = (char**) malloc(sizeof(char*) * 10);
             size = 10;
             token = strtok(pipe_command[j], " ");
+
+            // Tokenize the pipe command into arguments
             while (token != NULL) {
                 argv[argv_count] = (char*) malloc(sizeof(char) * (strlen(token) + 1));
                 strcpy(argv[argv_count], token);
                 argv_count++;
-                if (argv_count >= size-1) { 
+
+                if (argv_count >= size-1) {  // Resize the argv array if necessary
                     argv = (char**) realloc(argv, sizeof(char*) * (size + 10));
                     size+=10;
                 }
@@ -165,20 +175,24 @@ while (1)
 
             pipe(pipes); 
 
+            // Fork a child process for executing the pipe command
             if (fork() == 0) { 
-                close(pipes[0]); 
-                dup2(input, STDIN_FILENO); 
+                close(pipes[0]); // Close the read end of the pipe
+                dup2(input, STDIN_FILENO); // Redirect input to the pipe
+                // If not the last pipe command, redirect output to the pipe
                 if (j < pipe_count - 1) {
                     dup2(pipes[1], STDOUT_FILENO);
                 }
                 close(pipes[1]); 
 
+                // Execute the command
                 if (execvp(argv[0], argv) == -1) {
                     printf("Error executing command %s\n", argv[0]);
                     exit(EXIT_FAILURE);
                 }
             } else { 
-                close(pipes[1]); 
+                close(pipes[1]); // Close the write end of the pipe
+                // Close input if not stdin
                 if (input != STDIN_FILENO) {
                     close(input); 
                 }
