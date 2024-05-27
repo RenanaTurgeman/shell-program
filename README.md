@@ -3,10 +3,10 @@ MY SHELL:
 Renana Turgeman 322998287
 Avia Oren 322233301
 
-to run our program:
-make and then ./myshell
+To run the program:
+Run "make" to compile the program and then execute it with "./myshell".
 
-the test.txt file is the txt file with examples from our checks.
+The test.txt file contains examples of commands used for testing.
 
 Our assumptions
 1. in the arrow navigation: first navigate by the arrows, press enter and then the command will be executed.
