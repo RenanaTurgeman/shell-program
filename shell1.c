@@ -7,11 +7,18 @@
 #include "unistd.h"
 #include <string.h>
 
+// Prompt initialization
+char prompt[1024] = "hello:";
+
 // This function handles the SIGINT signal, which is generated when the user
 // presses Ctrl+C in the terminal.
 void handle_Control_C(int signal) {
     // Print a message indicating that the user typed Control-C.
     printf("\nYou typed Control-C!\n");
+
+    printf("%s ", prompt);
+    // Flush the output buffer to ensure the prompt is printed immediately
+    fflush(stdout);
 }
 
 int main() {
@@ -36,10 +43,6 @@ char *outfile; // File for output redirection
 int fd, amper, redirect, piping, retid, status, argc1, redirectError, redirectAppend;
 int fildes[2]; // File descriptors for piping
 char *argv1[10], *argv2[10]; // Arrays to store command arguments
-
-// Prompt initialization
-char prompt[1024];
-strcpy(prompt, "hello:");
 
 while (1)
 {
