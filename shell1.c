@@ -7,73 +7,92 @@
 #include "unistd.h"
 #include <string.h>
 
-
+// This function handles the SIGINT signal, which is generated when the user
+// presses Ctrl+C in the terminal.
 void handle_Control_C(int signal) {
+    // Print a message indicating that the user typed Control-C.
     printf("\nYou typed Control-C!\n");
 }
 
 int main() {
+// Registering handle_Control_C function to handle SIGINT signal (Ctrl+C).
 signal(SIGINT, handle_Control_C);
 
-int numCommand = 0;
-char command[1024];
-char lastCommands[21][1024];
+int numCommand = 0; // Counter for the number of commands entered
+char command[1024]; // Array to store the entered command
+char lastCommands[21][1024]; // Array to store the last 20 commands entered
 
-char var[1024];
-int count_var = 0;
-char variables[20][1024];
-char variables_val[20][1024];
+char var[1024]; // Buffer for reading user input
+int count_var = 0; // Counter for the number of user-defined variables
+char variables[20][1024]; // Array to store variable names
+char variables_val[20][1024]; // Array to store variable values
 
+// Token and index variables for command parsing
 char *token;
 int i;
-char *outfile;
-int fd, amper, redirect, piping, retid, status, argc1, redirectError, redirectAppend;
-int fildes[2];
-char *argv1[10], *argv2[10];
 
+// Variables for redirection, piping, and background execution
+char *outfile; // File for output redirection
+int fd, amper, redirect, piping, retid, status, argc1, redirectError, redirectAppend;
+int fildes[2]; // File descriptors for piping
+char *argv1[10], *argv2[10]; // Arrays to store command arguments
+
+// Prompt initialization
 char prompt[1024];
 strcpy(prompt, "hello:");
 
 while (1)
 {
+    // Print the prompt
     printf("%s ", prompt);
+    // Read the command entered by the user
     fgets(command, 1024, stdin);
     command[strlen(command) - 1] = '\0';
 
     /* navigate between the commands: arrow up or down */
-    if (command[0] == '\033') {
-        int point_command = numCommand+1; 
+    if (command[0] == '\033') { //indicates that the user pressed an arrow key
+        int point_command = numCommand+1; //initializes to the index of the next command in the history
         for(int i = 0; command[i] != '\0'; i++) { 
             if (command[i] == '\033' && command[i+1] == '[') {
                 switch(command[i+2]) { 
                     case 'A': // code for arrow up
-                        point_command--;
+                        point_command--; // navigate to the previous command in the history
                         break;;
                     case 'B': // code for arrow down
                         if(point_command != numCommand+1) {
-                            point_command++;
+                            point_command++; // navigate to the next command in the history
                         }
                         break;;
                 }
             } else {
+                // skip the rest of the loop iteration if the current character does 
+                // not match the conditions for an arrow key escape sequence
                 continue;
             }
         }
+        // Check if the command index is within the valid range of the command history array.
         if(point_command <= numCommand && point_command > numCommand - 20 && point_command > 0) { 
+            // Print the command from the history corresponding to the adjusted index.
             printf("%s\n", lastCommands[point_command%20]);
+            // Replace the current command with the selected command from the history
             strcpy(command,lastCommands[point_command%20]);
         } else {
-            printf("you don't have access to this command!\n");
+            // Inform the user if the requested command is out of range or invalid.
+            printf("\033[0;31mthe requested command is out of range!\033[0m\n");
+            // printf("you don't have access to this command!\n");
             continue;
         }
     }
 
     /* !! command: do the last command */
     if(!strcmp(command, "!!")) {
+        // If there are previous commands in history, execute the last one
         if(numCommand > 0) {
+            // Copy the last command from history to the current command buffer
             strcpy(command, lastCommands[numCommand%20]);
             printf("%s\n", command);
         } else {
+            // If there are no previous commands, skip execution and prompt for a new command.
             continue;
         }
     } 
@@ -84,9 +103,11 @@ while (1)
     
     /* if command */
     if (command[0] == 'i' && command[1] == 'f') {
-        int see_fi = 1;
+        int see_fi = 1; // set the flag
         command[strlen(command)-1] = '\n';
-        char next_if[1024];
+        char next_if[1024]; // Initialize a buffer to store the next line of the command
+
+        // Continue reading subsequent lines until 'fi' is encountered
         while (see_fi) {
             memset(next_if, 0, sizeof(next_if)); 
             fgets(next_if, 1024, stdin);
